@@ -1,0 +1,11 @@
+{
+  "name": "new",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@apollo/federation": "latest",
+    "apollo-server": "latest",
+    "graphql": "latest"
+  }
+}
