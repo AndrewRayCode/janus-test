@@ -2,41 +2,17 @@ const { ApolloServer, gql } = require("apollo-server");
 const { buildFederatedSchema } = require("@apollo/federation");
 
 const typeDefs = gql`
-  interface Interaction {
-    id: ID!
-    member: MemberType
+  type MemberType @key(fields: "fhirPatientId") {
+    fhirPatientId: String
   }
 
-  type ClinicalVisit implements Interaction {
+  type UserType @key(fields: "id") {
     id: ID!
-    reasonForVisit: String!
-    member: MemberType
+    member: MemberType!
   }
-
-  type CaseType implements Interaction @key(fields: "id") {
-    id: ID!
-    serviceType: String!
-    member: MemberType
-  }
-
-  type MemberType @key(fields: "id") {
-    id: ID!
-    name: String!
-    # interactions: [Interaction]
-    # clinicalVisits: [ClinicalVisit]
-  }
-
-  # extend type Mutation {
-  #   createClinicalVisit(memberId: ID!): ClinicalVisit
-  # }
-
-  # extend type ClinicalVisit @key(fields: "id") {
-  #   id: ID! @external
-  #   member: MemberType
-  # }
 
   extend type Query {
-    me: MemberType
+    me: UserType
   }
 `;
 
@@ -47,8 +23,12 @@ const resolvers = {
   Query: {
     me() {
       return {
-        id: 'Jarvis me member ID',
-        name: 'me name'
+        id: '0017A00000VAQcxQAH',
+        name: 'me name',
+        member:  {
+          fhirPatientId: '0017A00000VAQcxQAH',
+          name: 'me name'
+        }
       }
     }
   },
@@ -85,7 +65,11 @@ const resolvers = {
       console.log('JARVIS: member reference resolver', object);
       return {
         id: 'ID From Jarvis reference resolver',
-        name: 'Name from Jarvis reference resolver',
+        dob: 'Name from Jarvis reference resolver',
+        memberId: 'Name from Jarvis reference resolver',
+        firstName: 'Name from Jarvis reference resolver',
+        lastName: 'Name from Jarvis reference resolver',
+        availableServices: [{ uri: 'urhi' }],
       };
     },
   },

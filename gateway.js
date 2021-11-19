@@ -1,5 +1,14 @@
 const { ApolloServer } = require("apollo-server");
-const { ApolloGateway } = require("@apollo/gateway");
+const { ApolloGateway, RemoteGraphQLDataSource } = require("@apollo/gateway");
+
+const token = `
+`.trim();
+
+class AuthenticatedDataSource extends RemoteGraphQLDataSource {
+  willSendRequest({ request, context }) {
+    request.http.headers.set('Authorization', token);
+  }
+}
 
 const gateway = new ApolloGateway({
   // This entire `serviceList` is optional when running in managed federation
@@ -8,10 +17,18 @@ const gateway = new ApolloGateway({
   // prevents composition failures at runtime using schema validation using
   // real usage-based metrics.
   serviceList: [
-    { name: "new", url: "http://localhost:4001/graphql" },
-    { name: "old", url: "http://localhost:4004/graphql" },
-    { name: "aside", url: "http://localhost:4003/graphql" }
+    { name: "old", url: "http://localhost:4001/graphql" },
+    // { name: "new", url: "http://localhost:4004/graphql" }
+    { name: "careapi", url: "http://localhost:50059/graphql" },
   ],
+
+  introspectionHeaders: {
+    Authorization: token
+  },
+
+  buildService({ name, url }) {
+    return new AuthenticatedDataSource({ url });
+  },
 
   // Experimental: Enabling this enables the query plan view in Playground.
   __exposeQueryPlanExperimental: false,
@@ -20,6 +37,18 @@ const gateway = new ApolloGateway({
 (async () => {
   const server = new ApolloServer({
     gateway,
+
+    context: ({ req }) => console.log(req.headers) || ({
+      req,
+      headers: {
+        ...req.headers,
+      },
+      customHeaders: {
+        headers: {
+          ...req.headers,
+        },
+      },
+    }),
 
     // Apollo Graph Manager (previously known as Apollo Engine)
     // When enabled and an `ENGINE_API_KEY` is set in the environment,
@@ -30,7 +59,7 @@ const gateway = new ApolloGateway({
     subscriptions: false,
   });
 
-  server.listen().then(({ url }) => {
+  server.listen({ port: 4002 }).then(({ url }) => {
     console.log(`🚀 Server ready at ${url}`);
   });
 })();
